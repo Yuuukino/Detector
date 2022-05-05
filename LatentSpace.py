@@ -32,6 +32,7 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(description='Generate_Latent_Space')
+    parser.add_argument("--clean", action="store_true", default=False, help="Clean Image")
     parser.add_argument("--fgsm", action="store_true", default=False, help="FGSM Attack")
     parser.add_argument("--pgd", action="store_true", default=False, help="PGD Attack")
     parser.add_argument("--deepfool", action="store_true", default=False, help="Deep Fool Attack")
@@ -59,6 +60,28 @@ if __name__ == "__main__":
     df_name = []
     df_total = []
 
+    if args.clean:
+
+        Clean_Latent = []
+        Clean_Label = []
+        
+        for i, data in enumerate(trainloader):
+            inputs, labels = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            hidden, outputs = model(inputs)
+            for j in range(len(hidden)):
+                Clean_Latent.append(hidden[j].cpu().detach().numpy())
+                Clean_Label.append(0)
+            print('Clean, Iteration {}'.format(i))
+
+        Clean_images_labels_df = pd.DataFrame({'Images': Clean_Latent, 'Labels': Clean_Label})
+        Clean_dataset = LatentDataset(Clean_images_labels_df['Images'],Clean_images_labels_df['Labels'])
+        Clean_dataloader = DataLoader(Clean_dataset, batch_size=2, shuffle=True)
+    
+        df_name.append('/Clean_Latent.pt')
+        df_total.append(Clean_images_labels_df)
+
     if args.fgsm:
         fgsm = torch.load(models_dir + '/FGSM.pt')
         fgsm_ds = AttackDataset(fgsm['Images'],fgsm['Labels'])
@@ -76,7 +99,7 @@ if __name__ == "__main__":
             for j in range(len(hidden)):
                 FGSM_Latent.append(hidden[j].cpu().detach().numpy())
                 FGSM_Label.append(1)
-            print('Iteration {}'.format(i))
+            print('FGSM, Iteration {}'.format(i))
 
         fgsm_images_labels_df = pd.DataFrame({'Images': FGSM_Latent, 'Labels': FGSM_Label})
         fgsm_dataset = LatentDataset(fgsm_images_labels_df['Images'],fgsm_images_labels_df['Labels'])
@@ -102,7 +125,7 @@ if __name__ == "__main__":
             for j in range(len(hidden)):
                 PGD_Latent.append(hidden[j].cpu().detach().numpy())
                 PGD_Label.append(1)
-            print('Iteration {}'.format(i))
+            print('PGD, Iteration {}'.format(i))
 
         pgd_images_labels_df = pd.DataFrame({'Images': PGD_Latent, 'Labels': PGD_Label})
         pgd_dataset = LatentDataset(pgd_images_labels_df['Images'],pgd_images_labels_df['Labels'])
@@ -128,11 +151,12 @@ if __name__ == "__main__":
             for j in range(len(hidden)):
                 deepfool_Latent.append(hidden[j].cpu().detach().numpy())
                 deepfool_Label.append(1)
-            print('Iteration {}'.format(i))
+            print('DeepFool, Iteration {}'.format(i))
 
         deepfool_images_labels_df = pd.DataFrame({'Images': deepfool_Latent, 'Labels': deepfool_Label})
         deepfool_dataset = LatentDataset(deepfool_images_labels_df['Images'],deepfool_images_labels_df['Labels'])
         deepfool_dataloader = DataLoader(deepfool_dataset, batch_size=2, shuffle=True)
+
         df_name.append('/DeepFool_Latent.pt')
         df_total.append(deepfool_images_labels_df)  
 

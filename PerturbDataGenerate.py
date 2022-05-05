@@ -10,6 +10,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
+import matplotlib.pyplot as plt
 import foolbox as fb
 import ResNet
 
@@ -72,7 +73,7 @@ if __name__ == "__main__":
             inputs, labels = data
             inputs = inputs.to(device)
             labels = labels.to(device)
-            raw, clipped, is_adv = attack(fmodel, inputs, labels, epsilons=0.3)
+            raw, clipped, is_adv = attack(fmodel, inputs, labels, epsilons=0.02)
             
             total += labels.size(0)
             success = 0
@@ -81,10 +82,12 @@ if __name__ == "__main__":
                     FGSMimages.append(clipped[i].detach().cpu().numpy())
                     FGSMlabels.append(1)
                     success += 1
-            print('Success attack {}, Total {}, Percentage {}'.format(success, total, success * 100 / labels.size(0)))
+            print('FGSM: Success attack {}, Total {}, Percentage {}'.format(success, total, success * 100 / labels.size(0)))
+
 
         success = len(FGSMlabels)
         print('Summary: Success attack {}, Total {}, Percentage {}'.format(success, total, success * 100 / total))
+
 
 
         fgsm_images_labels_df = pd.DataFrame({'Images': FGSMimages, 'Labels': FGSMlabels})
@@ -104,7 +107,7 @@ if __name__ == "__main__":
             inputs, labels = data
             inputs = inputs.to(device)
             labels = labels.to(device)
-            raw, clipped, is_adv = attack(fmodel, inputs, labels, epsilons=0.3)
+            raw, clipped, is_adv = attack(fmodel, inputs, labels, epsilons=0.02)
             
             total += labels.size(0)
             success = 0
@@ -113,7 +116,7 @@ if __name__ == "__main__":
                     PGDimages.append(clipped[i].detach().cpu().numpy())
                     PGDlabels.append(1)
                     success += 1
-            print('Success attack {}, Total {}, Percentage {}'.format(success, total, success * 100 / labels.size(0)))
+            print('PGD: Success attack {}, Total {}, Percentage {}'.format(success, total, success * 100 / labels.size(0)))
 
 
         success = len(PGDlabels)
@@ -136,7 +139,7 @@ if __name__ == "__main__":
             inputs, labels = data
             inputs = inputs.to(device)
             labels = labels.to(device)
-            raw, clipped, is_adv = attack(fmodel, inputs, labels, epsilons = 0.3)
+            raw, clipped, is_adv = attack(fmodel, inputs, labels, epsilons = 0.02)
             
             total += labels.size(0)
             success = 0
@@ -145,7 +148,8 @@ if __name__ == "__main__":
                     DFimages.append(clipped[i].detach().cpu().numpy())
                     DFlabels.append(1)
                     success += 1
-            print('Success attack {}, Total {}, Percentage {}'.format(success, total, success * 100 / labels.size(0)))
+            print('DeepFool: Success attack {}, Total {}, Percentage {}'.format(success, total, success * 100 / labels.size(0)))
+
 
         success = len(DFlabels)
         print('Summary: Success attack {}, Total {}, Percentage {}'.format(success, total, success * 100 / total))
@@ -162,10 +166,28 @@ if __name__ == "__main__":
     for i in range(len(df_name)):
         torch.save(df_total[i], models_dir + df_name[i])
 
-    # FF = torch.load(models_dir + '/FGSM.pt')
+    # FF = torch.load(models_dir + '/DeepFool.pt')
     # TD = AttackDataset(FF['Images'],FF['Labels'])
     # DL_DS = DataLoader(TD, batch_size=1, shuffle=True)
+
+    # ss = [[0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010]]
+    # for data in DL_DS:
+    #     images = data["Images"]
+    #     labels = data["Labels"]
+    #     for i in range(3):
+    #         images[0][i] = images[0][i] * ss[1][i] + ss[0][i]
+    #     plt.imshow(np.transpose(torchvision.utils.make_grid(images).cpu().numpy(), (1, 2, 0)))
+    #     plt.show()
+    #     break
+
+
+    # t = 0
     # for i in DL_DS:
-    #     images = i["Images"]
-    #     print(images.shape)
-    # print("Out")
+    #     t += 1
+    #     if t == 30000:
+    #         break
+
+    # s = 0
+    # for i in DL_DS:
+    #     s += 1
+    # print(t, s)
